@@ -2,6 +2,8 @@ namespace v2rayN.Desktop.Views;
 
 public partial class QrcodeView : UserControl
 {
+    public bool HasQrCode => imgQrcode.Source is Bitmap;
+
     public QrcodeView()
     {
         InitializeComponent();
@@ -20,8 +22,16 @@ public partial class QrcodeView : UserControl
 
         txtContent.Text = url;
         imgQrcode.Source = GetQRCode(url);
+        imgQrcode.IsVisible = HasQrCode;
 
         txtContent.GotFocus += (_, _) => Dispatcher.UIThread.Post(() => { txtContent.SelectAll(); });
+    }
+
+    public void ReleaseQrCode()
+    {
+        var bitmap = imgQrcode.Source as Bitmap;
+        imgQrcode.Source = null;
+        bitmap?.Dispose();
     }
 
     private Bitmap? GetQRCode(string? url)

@@ -14,6 +14,11 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        Global.IsTakiDesktop = typeof(Program).Assembly.GetName().Name == "KnightRay";
+        if (OperatingSystem.IsLinux())
+        {
+            Directory.CreateDirectory(Utils.StartupPath(), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
         if (OnStartup(args) == false)
         {
             Environment.Exit(0);
@@ -28,9 +33,9 @@ internal class Program
     {
         if (Utils.IsWindows())
         {
-            var exePathKey = Utils.GetMd5(Utils.GetExePath());
+            var instanceKey = Utils.GetMd5(Global.IsTakiDesktop ? Utils.StartupPath() : Utils.GetExePath());
             var rebootas = (Args ?? []).Any(t => t == Global.RebootAs);
-            ProgramStarted = new EventWaitHandle(false, EventResetMode.AutoReset, exePathKey, out var bCreatedNew);
+            ProgramStarted = new EventWaitHandle(false, EventResetMode.AutoReset, instanceKey, out var bCreatedNew);
             if (!rebootas && !bCreatedNew)
             {
                 ProgramStarted.Set();
@@ -41,7 +46,7 @@ internal class Program
         {
             // Keep the named mutex alive for the process lifetime. Discarding the handle lets
             // the runtime finalize it, so the next launch sees no running instance.
-            _instanceMutex = new Mutex(true, "v2rayN", out var bOnlyOneInstance);
+            _instanceMutex = new Mutex(true, Global.AppStorageName, out var bOnlyOneInstance);
             if (!bOnlyOneInstance)
             {
                 return false;

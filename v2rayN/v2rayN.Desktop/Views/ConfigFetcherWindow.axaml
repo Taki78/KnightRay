@@ -1,0 +1,109 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fetch="using:ServiceLib.Services.ConfigFetcher"
+        x:Class="v2rayN.Desktop.Views.ConfigFetcherWindow"
+        Width="900" Height="730" MinWidth="670" MinHeight="550"
+        WindowStartupLocation="CenterOwner" Title="Config Fetcher &amp; Tester">
+    <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+        <TextBlock Text="Config Fetcher &amp; Tester" FontSize="22" FontWeight="SemiBold" />
+        <TextBlock Grid.Row="1" Text="Choose what to fetch, test the configs, then select the working ones you want to import." TextWrapping="Wrap" />
+        <TabControl Grid.Row="2" x:Name="Pages">
+            <TabItem Header="Sources">
+                <Grid Margin="4,10" RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="7">
+                    <TextBlock Text="Select a repository to fetch and test its files. Use the menu below to run all enabled repositories or only pasted links." TextWrapping="Wrap" />
+                    <ListBox Grid.Row="1" x:Name="SourceList" SelectionChanged="SourceSelected">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="fetch:FetcherSource">
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Text="Disabled" Opacity="0.65" IsVisible="{Binding !Enabled}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                        <Button Content="New source" Click="NewSource" />
+                        <Button Content="Delete selected" Click="DeleteSource" />
+                        <Button x:Name="RestoreDefaultsButton" Content="Restore defaults" Click="RestoreDefaults"
+                                ToolTip.Tip="Bring back deleted default repositories. Keep existing sources and edits." />
+                    </StackPanel>
+                    <TextBox Grid.Row="3" x:Name="SourceName" PlaceholderText="Source name" />
+                    <TextBox Grid.Row="4" x:Name="SourceUrl" PlaceholderText="HTTPS file URL or URL template with {proto}" />
+                    <TextBox Grid.Row="5" x:Name="SourceKeys" PlaceholderText="File keys for {proto}, separated by commas (optional)" />
+                    <StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="8">
+                        <CheckBox x:Name="SourceEnabled" Content="Enabled" IsChecked="True" />
+                        <Button Content="Preview files" Click="PreviewSource" />
+                        <Button Content="Save source" Click="SaveSource" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="7" MaxHeight="90">
+                        <TextBlock x:Name="SourcePreview" TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Paste links" x:Name="PasteTab">
+                <Grid RowDefinitions="Auto,*" Margin="4,10" RowSpacing="8">
+                    <TextBlock Text="Choose Pasted links only below to test these links without fetching a repository." TextWrapping="Wrap" />
+                    <TextBox Grid.Row="1" x:Name="Pasted" AcceptsReturn="True" TextWrapping="Wrap"
+                             PlaceholderText="Paste share links, one per line, or a Base64 subscription list." />
+                </Grid>
+            </TabItem>
+            <TabItem Header="Working" x:Name="WorkingTab">
+                <Grid RowDefinitions="Auto,*" Margin="4,10" RowSpacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="SelectAllButton" Content="Select all" Click="SelectAllWorking" IsEnabled="False" />
+                        <Button x:Name="ImportButton" Content="Import selected" Click="ImportSelected" />
+                        <Button x:Name="ShareQrButton" Content="Share QR code" Click="ShareWorkingQr" IsEnabled="False" />
+                    </StackPanel>
+                    <ListBox Grid.Row="1" x:Name="WorkingList" SelectionMode="Multiple">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="fetch:FetchResult">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding Profile.ConfigType}" />
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding LatencyMs, StringFormat='{}{0} ms'}" />
+                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Source}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Other results" x:Name="OtherTab">
+                <ListBox x:Name="OtherList" Margin="4,10">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="fetch:FetchResult">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Status}" />
+                                    <TextBlock Text="{Binding Detail}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding Source}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </TabItem>
+        </TabControl>
+        <Grid Grid.Row="3" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox x:Name="FetchScope" SelectedIndex="1">
+                    <ComboBoxItem Content="Selected repository" />
+                    <ComboBoxItem Content="All enabled repositories" />
+                    <ComboBoxItem Content="Pasted links only" />
+                </ComboBox>
+                <TextBlock Text="Entries per file:" VerticalAlignment="Center" />
+                <NumericUpDown x:Name="EntriesPerFile" Minimum="1" Maximum="1000" Width="104" FormatString="0" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" x:Name="StatusText" Text="Ready" TextWrapping="Wrap" />
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="RunButton" Content="Fetch &amp; Test" Click="Run" />
+                <Button x:Name="RetestButton" Content="Retest unfinished or failed" Click="Retest" IsEnabled="False" />
+                <Button x:Name="CancelButton" Content="Cancel" Click="Cancel" IsEnabled="False" />
+                <Button Content="Close" Click="CloseFetcher" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

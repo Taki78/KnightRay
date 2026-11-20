@@ -1,3 +1,66 @@
+# KnightRay for Linux, Windows, and Android
+
+[Download KnightRay from GitHub Releases](https://github.com/Taki78/KnightRay/releases).
+
+KnightRay forks v2rayN on desktop and v2rayNG on Android. On desktop, open **Tools → Config Fetcher & Tester**
+to manage repository sources, paste share links, test real HTTPS traffic, and import
+selected working profiles into **Fetched Configs**. In **Working**, select one result
+and click **Share QR code** to share it before importing.
+
+On Windows x64, extract `KnightRay-windows-x64.zip` and open `KnightRay.exe`.
+The ZIP includes the .NET runtime, Xray, and sing-box. No installer or administrator
+access is needed for ordinary proxy use. The app keeps its files in
+`%LOCALAPPDATA%\v2rayTaki`, so it can reuse your previous v2rayTaki settings and stay separate from v2rayN. To build the ZIP from source after
+initializing the submodules, run `python scripts/package-v2raytaki-windows.py`
+with the .NET 10 SDK and Python 3 installed.
+
+Build a self-contained Linux archive with the .NET 10 SDK and Python 3. Initialize the upstream
+hotkey submodule if needed:
+
+```sh
+git submodule update --init --recursive
+./scripts/package-v2raytaki.sh
+tar -xzf dist/KnightRay-linux-x64.tar.gz
+./KnightRay-linux-x64/install.sh
+```
+
+The installer requires no administrator access. It installs a **KnightRay** desktop
+entry and a `~/.local/bin/knightray` launcher. The Linux archive includes the
+.NET runtime, Xray, and sing-box. The packaging script also supports ARM64.
+Avoid the upstream Debian/RPM packaging
+scripts when installing this fork.
+
+On Linux, KnightRay reuses the existing settings and profiles under
+`${XDG_DATA_HOME:-~/.local/share}/v2rayTaki`. On both platforms it defaults to
+local proxy port 11808 and leaves desktop proxy settings unchanged. Use only one
+client to manage the system proxy or TUN at a time.
+
+The desktop fetcher starts with **All enabled repositories** selected and tests up to 35 entries per
+file. Click **Fetch & Test** to start, or use the menu next to **Entries per file**
+to test a single repository or pasted links. The results tabs fill as tests finish;
+check **Other results** for rejected entries and download issues.
+Use **Restore defaults** in the Sources tab to bring back deleted default
+repositories. Existing sources are left as they are.
+
+On desktop, click **Start Auto Select** to check all supported configs in the
+current list. Turn on **Selected rows only** to use just the highlighted rows
+(hold Ctrl or Shift to select multiple). The list is captured when you start.
+After each round finishes, Auto Select waits 300 seconds by default; set the
+wait as low as 5 seconds.
+The app picks the working config with the lowest HTTPS delay in each check.
+It keeps the current config if it ties for lowest delay or if none pass.
+Checks continue while the app is in the tray, until you click
+**Stop Auto Select** or exit KnightRay.
+
+See [plan.md](plan.md) for the design and verification criteria. The upstream README
+continues below.
+
+On [Android](android/README.md), install the ARM64 APK and open **KnightRay**.
+Use **Config Fetcher & Tester** in the navigation drawer or **Start Auto Select**
+above the main config list.
+
+---
+
 # v2rayN
 
 ### A GUI client for Windows, Linux and macOS. Support [Xray](https://github.com/XTLS/Xray-core) and [sing-box](https://github.com/SagerNet/sing-box) and [others](https://github.com/2dust/v2rayN/wiki/List-of-supported-cores)

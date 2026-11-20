@@ -32,7 +32,7 @@ public class FmtHandler
         }
     }
 
-    public static ProfileItem? ResolveConfig(string config, out string msg)
+    public static ProfileItem? ResolveConfig(string config, out string msg, bool logParseErrors = true)
     {
         msg = ResUI.ConfigurationFormatIncorrect;
 
@@ -103,7 +103,10 @@ public class FmtHandler
         }
         catch (Exception ex)
         {
-            Logging.SaveLog(_tag, ex);
+            if (logParseErrors)
+            {
+                Logging.SaveLog(_tag, ex);
+            }
             msg = ResUI.Incorrectconfiguration;
             return null;
         }

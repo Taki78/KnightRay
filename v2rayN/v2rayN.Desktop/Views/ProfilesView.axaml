@@ -102,6 +102,25 @@
 
             </WrapPanel>
 
+            <WrapPanel x:Name="autoConfigBar" Margin="6,2" DockPanel.Dock="Top" IsVisible="False">
+                <Button x:Name="btnAutoConfig" Margin="0,0,8,0" Content="Start Auto Select" />
+                <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" Text="Wait" />
+                <NumericUpDown
+                    x:Name="autoConfigInterval"
+                    Width="90"
+                    Increment="1"
+                    FormatString="0"
+                    ToolTip.Tip="Wait time after each round finishes."
+                    AutomationProperties.Name="Seconds to wait after each automatic check" />
+                <TextBlock Margin="4,0,8,0" VerticalAlignment="Center" Text="sec" />
+                <CheckBox x:Name="autoConfigSelectedOnly" Margin="0,0,8,0" Content="Selected rows only" />
+                <TextBlock
+                    x:Name="autoConfigStatus"
+                    MaxWidth="500"
+                    VerticalAlignment="Center"
+                    TextWrapping="Wrap" />
+            </WrapPanel>
+
             <DataGrid
                 x:Name="lstProfiles"
                 AutoGenerateColumns="False"
@@ -116,6 +135,7 @@
                 HeadersVisibility="All"
                 IsReadOnly="False"
                 ItemsSource="{Binding ProfileItems}"
+                SelectionMode="Extended"
                 ShowRowNumbers="True">
                 <DataGrid.KeyBindings>
                     <KeyBinding Command="{Binding Export2ShareUrlCmd}" Gesture="Ctrl+C" />

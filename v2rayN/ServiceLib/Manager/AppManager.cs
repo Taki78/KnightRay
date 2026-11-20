@@ -67,6 +67,22 @@ public sealed class AppManager
         }
 
         Logging.Setup();
+        if (Global.IsTakiDesktop)
+        {
+            var bundledBin = Utils.GetBaseDirectory("bin");
+            if (Directory.Exists(bundledBin) &&
+                !string.Equals(Path.GetFullPath(bundledBin), Path.GetFullPath(Utils.GetBinPath("")), StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    FileUtils.CopyDirectory(bundledBin, Utils.GetBinPath(""), recursive: true, overwrite: false);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    Logging.SaveLog("Copy bundled KnightRay cores", ex);
+                }
+            }
+        }
         if (ConfigTextHandler.Init() != true)
         {
             return false;
@@ -94,7 +110,7 @@ public sealed class AppManager
 
     public bool InitComponents()
     {
-        Logging.SaveLog($"v2rayN start up | {Utils.GetRuntimeInfo()}");
+        Logging.SaveLog($"{Global.AppName} start up | {Utils.GetRuntimeInfo()}");
         Logging.LoggingEnabled(CurrentConfig.GuiItem.EnableLog);
 
         //First determine the port value
@@ -158,7 +174,7 @@ public sealed class AppManager
 
     public int GetLocalPort(EInboundProtocol protocol)
     {
-        var localPort = CurrentConfig.Inbound.FirstOrDefault(t => t.Protocol == nameof(EInboundProtocol.socks))?.LocalPort ?? 10808;
+        var localPort = CurrentConfig.Inbound.FirstOrDefault(t => t.Protocol == nameof(EInboundProtocol.socks))?.LocalPort ?? Global.DefaultSocksPort;
         return localPort + (int)protocol;
     }
 

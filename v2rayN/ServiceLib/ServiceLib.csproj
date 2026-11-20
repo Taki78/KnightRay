@@ -95,6 +95,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ServiceLib.UdpTest\ServiceLib.UdpTest.csproj" />
+        <InternalsVisibleTo Include="ServiceLib.Tests" />
     </ItemGroup>
 
 </Project>

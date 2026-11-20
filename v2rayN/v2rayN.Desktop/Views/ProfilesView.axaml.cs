@@ -198,6 +198,54 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
         }
     }
 
+    internal void EnableAutoConfig(AutoConfigSession session)
+    {
+        autoConfigInterval.Minimum = AutoConfigSession.MinIntervalSeconds;
+        autoConfigInterval.Maximum = AutoConfigSession.MaxIntervalSeconds;
+        autoConfigInterval.Value = AutoConfigSession.DefaultIntervalSeconds;
+        autoConfigBar.IsVisible = true;
+
+        void Update()
+        {
+            btnAutoConfig.Content = session.IsStopping ? "Stopping…" : session.Running ? "Stop Auto Select" : "Start Auto Select";
+            btnAutoConfig.IsEnabled = !session.IsStopping;
+            autoConfigSelectedOnly.IsEnabled = autoConfigInterval.IsEnabled = !session.Running;
+            autoConfigStatus.Text = session.Status;
+            if (session.Running && !session.IsStopping)
+            {
+                autoConfigStatus.Text = $"{session.ProfileCount} in scope. {session.Status}";
+            }
+        }
+
+        session.Changed += Update;
+        btnAutoConfig.Click += (_, _) =>
+        {
+            if (session.Running)
+            {
+                session.Stop();
+                return;
+            }
+
+            var selectedOnly = autoConfigSelectedOnly.IsChecked == true;
+            var rows = selectedOnly ? lstProfiles.SelectedItems : lstProfiles.ItemsSource;
+            var ids = rows?.OfType<ProfileItemModel>().Select(item => item.IndexId)
+                .Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToArray() ?? [];
+            if (ids.Length == 0)
+            {
+                autoConfigStatus.Text = selectedOnly ? "Select at least one row." : "There are no configs in this list.";
+                return;
+            }
+            session.Start(ids, (int)(autoConfigInterval.Value ?? AutoConfigSession.DefaultIntervalSeconds));
+        };
+        autoConfigSelectedOnly.IsCheckedChanged += (_, _) =>
+        {
+            autoConfigStatus.Text = autoConfigSelectedOnly.IsChecked == true
+                ? "Select rows below (Ctrl or Shift for multiple)."
+                : "Ready to check all configs in this list.";
+        };
+        Update();
+    }
+
     private void lstProfiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (ViewModel != null)

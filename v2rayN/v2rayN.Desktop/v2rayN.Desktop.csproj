@@ -6,6 +6,11 @@
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 		<AssemblyName>v2rayN</AssemblyName>
+        <AssemblyName Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">KnightRay</AssemblyName>
+        <AssemblyName Condition="$(RuntimeIdentifier.StartsWith('linux-'))">KnightRay</AssemblyName>
+        <AssemblyName Condition="'$(TakiWindowsBuild)' == 'true' and $(RuntimeIdentifier.StartsWith('win-'))">KnightRay</AssemblyName>
+        <ApplicationIcon Condition="'$(AssemblyName)' == 'KnightRay'">Assets\v2rayTaki.ico</ApplicationIcon>
+        <Product Condition="'$(AssemblyName)' == 'KnightRay'">KnightRay</Product>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<CETCompat>false</CETCompat>
 	</PropertyGroup>
@@ -35,6 +40,7 @@
 	<ItemGroup>
 		<ProjectCapability Include="Avalonia" />
 		<AvaloniaResource Include="Assets\**" />
+        <AvaloniaResource Include="..\..\icon\*-helmet-icon.png" Link="Assets\Tray\%(Filename)%(Extension)" />
 		<ProjectReference Include="..\GlobalHotKeys\src\GlobalHotKeys\GlobalHotKeys.csproj" />
 		<ProjectReference Include="..\ServiceLib\ServiceLib.csproj" />
 	</ItemGroup>

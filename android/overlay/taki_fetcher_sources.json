@@ -1,0 +1,73 @@
+[
+  {
+    "id": "barry",
+    "name": "barry-far/V2ray-Config (15-min updates)",
+    "url": "https://raw.githubusercontent.com/barry-far/V2ray-Config/main/Splitted-By-Protocol/{proto}.txt",
+    "keys": [
+      "vless",
+      "vmess",
+      "trojan",
+      "ss",
+      "ssr"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "matin",
+    "name": "MatinGhanbari/v2ray-configs (15-min updates)",
+    "url": "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/filtered/subs/{proto}.txt",
+    "keys": [
+      "vless",
+      "vmess"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "mahan",
+    "name": "MahanKenway/Freedom-V2Ray (2-hour updates)",
+    "url": "https://raw.githubusercontent.com/MahanKenway/Freedom-V2Ray/main/configs/{proto}.txt",
+    "keys": [
+      "vless",
+      "vmess"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "morpheus",
+    "name": "morpheusadam/v2ray-config (daily rebuild, verified)",
+    "url": "https://raw.githubusercontent.com/morpheusadam/v2ray-config/main/subs/bundles/{proto}.txt",
+    "keys": [
+      "best",
+      "all",
+      "iran"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "au1rxx",
+    "name": "Au1rxx/free-vpn-subscriptions (hourly updates)",
+    "url": "https://github.com/Au1rxx/free-vpn-subscriptions/raw/main/output/{proto}.txt",
+    "keys": [
+      "v2ray-base64"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "delta",
+    "name": "Delta-Kronecker/V2ray-Config (daily updates)",
+    "url": "https://github.com/Delta-Kronecker/V2ray-Config/raw/refs/heads/main/config/{proto}.txt",
+    "keys": [
+      "all_configs"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "mahdi",
+    "name": "mahdibland/V2RayAggregator (speed-tested nodes)",
+    "url": "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/{proto}",
+    "keys": [
+      "Eternity"
+    ],
+    "enabled": true
+  }
+]

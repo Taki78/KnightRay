@@ -36,6 +36,38 @@ public sealed class SQLiteHelper
         return count;
     }
 
+    internal async Task<int> ImportFetchedProfilesAsync(List<ProfileItem> profiles)
+    {
+        const string groupId = Services.ConfigFetcher.FetcherImport.GroupId;
+        var count = 0;
+        if (profiles.Count == 0)
+        {
+            return count;
+        }
+
+        await _dbAsync.RunInTransactionAsync(connection =>
+        {
+            var existing = connection.Table<ProfileItem>().Where(p => p.Subid == groupId)
+                .ToList().Select(Services.ConfigFetcher.ConfigFetchService.Identity).ToHashSet();
+            if (connection.Find<SubItem>(groupId) is null)
+            {
+                connection.Insert(new SubItem { Id = groupId, Remarks = "Fetched Configs", Url = string.Empty, Enabled = false });
+            }
+            foreach (var profile in profiles)
+            {
+                if (!existing.Add(Services.ConfigFetcher.ConfigFetchService.Identity(profile)))
+                {
+                    continue;
+                }
+                profile.IndexId = Utils.GetGuid(false);
+                profile.Subid = groupId;
+                profile.IsSub = false;
+                count += connection.Insert(profile);
+            }
+        }).ConfigureAwait(false);
+        return count;
+    }
+
     public async Task<int> ReplaceAllAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IEnumerable<T> models)
     {
         var count = 0;

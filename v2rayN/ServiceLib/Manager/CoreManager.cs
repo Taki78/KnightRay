@@ -24,7 +24,7 @@ public class CoreManager
         _updateFunc = updateFunc;
 
         //Copy the bin folder to the storage location (for init)
-        if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
+        if (!Global.IsTakiDesktop && Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
             var fromPath = Utils.GetBaseDirectory("bin");
             var toPath = Utils.GetBinPath("");

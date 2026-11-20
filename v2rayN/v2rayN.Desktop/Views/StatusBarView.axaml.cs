@@ -65,9 +65,11 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     {
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow.Icon = AvaUtils.GetAppIcon(_config.SystemProxyItem.SysProxyType);
+            var proxyMode = _config.SystemProxyItem.SysProxyType;
+            var appIcon = AvaUtils.GetAppIcon(proxyMode);
+            desktop.MainWindow.Icon = appIcon;
             var iconslist = TrayIcon.GetIcons(Application.Current);
-            iconslist[0].Icon = desktop.MainWindow.Icon;
+            iconslist[0].Icon = ProxyTrayIcon.Get(proxyMode, appIcon);
             TrayIcon.SetIcons(Application.Current, iconslist);
         }
     }

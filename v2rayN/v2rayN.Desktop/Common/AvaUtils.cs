@@ -42,14 +42,18 @@ internal class AvaUtils
     public static WindowIcon GetAppIcon(ESysProxyType sysProxyType)
     {
         var index = (int)sysProxyType + 1;
-        var fileName = Utils.GetPath($"NotifyIcon{index}.ico");
+        var fileName = GetCustomIconPath(sysProxyType);
         if (File.Exists(fileName))
         {
             return new(fileName);
         }
 
-        var uri = new Uri(Path.Combine(Global.AvaAssets, $"NotifyIcon{index}.ico"));
-        using var bitmap = new Bitmap(AssetLoader.Open(uri));
+        var icon = Global.IsTakiDesktop ? "v2rayTaki.png" : $"NotifyIcon{index}.ico";
+        var uri = new Uri(Global.AvaAssets + icon);
+        using var stream = AssetLoader.Open(uri);
+        using var bitmap = new Bitmap(stream);
         return new(bitmap);
     }
+
+    public static string GetCustomIconPath(ESysProxyType type) => Utils.GetPath($"NotifyIcon{(int)type + 1}.ico");
 }

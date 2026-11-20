@@ -14,6 +14,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private readonly WindowNotificationManager? _manager;
     private CheckUpdateView? _checkUpdateView;
     private BackupAndRestoreView? _backupAndRestoreView;
+    private AutoConfigSession? _autoConfig;
     private bool _blCloseByUser = false;
 
     private MsgView? _msgView;
@@ -24,6 +25,17 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
+        Title = Global.AppName;
+        menuFetcherTools.IsVisible = Global.IsTakiDesktop;
+        menuConfigFetcher.Click += async (_, _) =>
+        {
+            var window = new ConfigFetcherWindow();
+            await window.ShowDialog(this);
+            if (window.Imported && ViewModel is { } model)
+            {
+                await model.ProfilesViewModel.RefreshServers();
+            }
+        };
 
         _config = ConfigTextHandler.Config;
         _manager = new WindowNotificationManager(TopLevel.GetTopLevel(this)) { MaxItems = 3, Position = NotificationPosition.TopRight };
@@ -132,7 +144,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             AppEvents.AppExitRequested
               .AsObservable()
               .ObserveOn(RxSchedulers.MainThreadScheduler)
-              .Subscribe(_ => StorageUI())
+              .Subscribe(_ =>
+              {
+                  _autoConfig?.Stop();
+                  StorageUI();
+              })
               .DisposeWith(disposables);
 
             AppEvents.ShutdownRequested
@@ -215,6 +231,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 break;
 
             case WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown:
+                _autoConfig?.Stop();
                 await AppManager.Instance.AppExitAsync(false);
                 break;
         }
@@ -306,6 +323,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             }
 
             _blCloseByUser = true;
+            _autoConfig?.Stop();
             StorageUI();
 
             await AppManager.Instance.AppExitAsync(true);
@@ -318,6 +336,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void Shutdown(bool obj)
     {
+        _autoConfig?.Stop();
         if (obj is bool b && _blCloseByUser == false)
         {
             _blCloseByUser = b;
@@ -421,6 +440,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             DataContext = ViewModel?.ProfilesViewModel,
         };
+        if (_autoConfig is null && Global.IsTakiDesktop)
+        {
+            _autoConfig = new(() => ViewModel);
+            _profilesView.EnableAutoConfig(_autoConfig);
+        }
         _clashProxiesView ??= new ClashProxiesView
         {
             DataContext = ViewModel?.ClashProxiesViewModel,

@@ -221,7 +221,7 @@ public static class AutoStartupHandler
             var linuxConfig = EmbedUtils.GetEmbedText(Global.LinuxAutostartConfig);
             if (linuxConfig.IsNotEmpty())
             {
-                linuxConfig = linuxConfig.Replace("$ExecPath$", Utils.GetExePath());
+                linuxConfig = linuxConfig.Replace("$ExecPath$", Utils.GetExePath()).Replace("$AppName$", Global.AppName);
                 Logging.SaveLog(linuxConfig);
 
                 var homePath = GetHomePathLinux();
@@ -237,7 +237,7 @@ public static class AutoStartupHandler
     [SupportedOSPlatform("linux")]
     private static string GetHomePathLinux()
     {
-        var homePath = Path.Combine(Utils.GetHomePath(), ".config", "autostart", $"{Global.AppName}.desktop");
+        var homePath = Path.Combine(Utils.GetHomePath(), ".config", "autostart", $"{Global.AppStorageName}.desktop");
         Directory.CreateDirectory(Path.GetDirectoryName(homePath));
         return homePath;
     }

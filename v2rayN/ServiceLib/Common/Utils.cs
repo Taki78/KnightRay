@@ -1175,6 +1175,12 @@ public class Utils
 
     public static string StartupPath()
     {
+        if (Global.IsTakiDesktop)
+        {
+            return Path.Combine(Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify), Global.AppStorageName);
+        }
+
         if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "v2rayN");

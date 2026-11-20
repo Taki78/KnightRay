@@ -63,7 +63,7 @@ public static class ConfigTextHandler
             InItem inItem = new()
             {
                 Protocol = nameof(EInboundProtocol.socks),
-                LocalPort = 10808,
+                LocalPort = Global.DefaultSocksPort,
                 UdpEnabled = true,
                 SniffingEnabled = true,
                 RouteOnly = false,
@@ -195,7 +195,7 @@ public static class ConfigTextHandler
         };
         config.ClashUIItem ??= new();
         config.ClashUIItem.ConnectionsColumnItem ??= [];
-        config.SystemProxyItem ??= new();
+        config.SystemProxyItem ??= Global.IsTakiDesktop ? new() { SysProxyType = ESysProxyType.Unchanged } : new();
         config.WebDavItem ??= new();
         config.CheckUpdateItem ??= new();
         config.Fragment4RayItem ??= new()
