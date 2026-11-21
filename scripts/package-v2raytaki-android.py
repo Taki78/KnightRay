@@ -23,7 +23,26 @@ APK = (f"https://github.com/2dust/v2rayNG/releases/download/{RELEASE}/v2rayNG_{R
 
 
 def run(*args, cwd=None):
-    subprocess.run(args, cwd=cwd, check=True)
+    subprocess.run(args, cwd=cwd, check=True, env=build_env())
+
+
+def android_sdk():
+    """Locate the Android SDK so Gradle does not need it exported by hand."""
+    for candidate in (os.environ.get("ANDROID_HOME"), os.environ.get("ANDROID_SDK_ROOT"),
+                      Path.home() / "android-sdk", Path.home() / "Android/Sdk",
+                      "/usr/lib/android-sdk", "/opt/android-sdk"):
+        if candidate and (Path(candidate) / "platforms").is_dir():
+            return Path(candidate)
+    return None
+
+
+def build_env():
+    env = os.environ.copy()
+    sdk = android_sdk()
+    if sdk:
+        env.setdefault("ANDROID_HOME", str(sdk))
+        env.setdefault("ANDROID_SDK_ROOT", str(sdk))
+    return env
 
 
 def artifact(cache, name, origin):
@@ -64,6 +83,54 @@ def prepare(source, cache):
         ('applicationId = "com.v2ray.ang"', 'applicationId = "io.github.v2raytaki.android"'),
         ('    versionCode = 755\n', '    versionCode = 760\n'),
         ('    compileSdk = 37\n', '    compileSdk = 37\n    buildToolsVersion = "36.0.0"\n'),
+        # Phone-only build: x86/x86_64 libraries are emulator-only and nearly
+        # double the APK size, so drop them. 32-bit devices keep armeabi-v7a.
+        ('                    include(\n'
+         '                        "arm64-v8a",\n'
+         '                        "armeabi-v7a",\n'
+         '                        "x86_64",\n'
+         '                        "x86"\n'
+         '                    )\n',
+         '                    include(\n'
+         '                        "arm64-v8a",\n'
+         '                        "armeabi-v7a"\n'
+         '                    )\n'),
+        # Ship the optimised release build instead of a debug APK: R8 removes
+        # dead code, resource shrinking drops unused resources, and the debug
+        # key keeps the update path for existing installs.
+        ('        release {\n'
+         '            isMinifyEnabled = false\n',
+         '        release {\n'
+         '            isMinifyEnabled = true\n'
+         '            isShrinkResources = true\n'
+         '            signingConfig = signingConfigs.getByName("debug")\n'),
+        # The Xray AAR carries emulator libraries; nothing on a phone uses them.
+        ('    flavorDimensions.add("distribution")\n',
+         '    packaging {\n'
+         '        jniLibs {\n'
+         '            excludes += listOf("lib/x86/**", "lib/x86_64/**")\n'
+         '        }\n'
+         '    }\n\n'
+         '    flavorDimensions.add("distribution")\n'),
+    ])
+    patch("app/proguard-rules.pro", [
+        ('# Add project specific ProGuard rules here.\n',
+         '# Keep reflection- and JNI-facing entry points used by Xray, MMKV and\n'
+         '# the settings/serialisation layers.\n'
+         '-keepattributes *Annotation*,InnerClasses,Signature,EnclosingMethod\n'
+         '-keep class com.v2ray.ang.dto.** { *; }\n'
+         '-keep class com.v2ray.ang.core.** { *; }\n'
+         '-keep class com.v2ray.ang.handler.** { *; }\n'
+         '-keep class com.v2ray.ang.service.** { *; }\n'
+         '-keep class com.v2ray.ang.receiver.** { *; }\n'
+         '-keep class com.v2ray.ang.ui.fetcher.** { *; }\n'
+         '-keep class com.v2ray.ang.ui.shortcut.** { *; }\n'
+         '-keep class com.tencent.mmkv.** { *; }\n'
+         '-dontwarn org.conscrypt.**\n'
+         '-dontwarn org.bouncycastle.**\n'
+         '-dontwarn org.slf4j.**\n'
+         '\n'
+         '# Add project specific ProGuard rules here.\n'),
     ])
     # Some translations override the launcher name and notification labels.
     for localized in (main / "res").glob("values*/strings.xml"):
@@ -74,6 +141,9 @@ def prepare(source, cache):
         ('android:icon="@mipmap/ic_launcher"\n', 'android:icon="@drawable/taki_app_icon"\n'
          '        android:roundIcon="@drawable/taki_app_icon"\n'),
         ('android:icon="@mipmap/ic_launcher">', 'android:icon="@drawable/taki_app_icon">'),
+        # The tile entry shown in the Quick Settings edit list uses this icon.
+        ('            android:icon="@drawable/ic_stat_name"\n',
+         '            android:icon="@drawable/ic_knight_shield"\n'),
         ('        <activity\n            android:name=".ui.main.MainActivity"',
          '        <activity android:name=".ui.fetcher.ConfigFetcherActivity" android:exported="false" />\n\n'
          '        <activity\n            android:name=".ui.main.MainActivity"'),
@@ -263,7 +333,7 @@ def prepare(source, cache):
          '            onClick = { onAction(MainAction.ToggleService) },'),
         ('                painter = if (isRunning) painterResource(R.drawable.ic_stop_24dp)\n'
          '                else painterResource(R.drawable.ic_play_24dp),',
-         '                painter = painterResource(R.drawable.knight_shield_icon),'),
+         '                painter = painterResource(R.drawable.ic_knight_shield),'),
         ('                    .graphicsLayer { rotationZ = rotationAnim.value }\n', ''),
     ])
     patch("app/src/main/java/com/v2ray/ang/receiver/WidgetProvider.kt", [
@@ -273,19 +343,19 @@ def prepare(source, cache):
          '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.knight_shield_icon)'),
     ])
     patch("app/src/main/java/com/v2ray/ang/service/QSTileService.kt", [
-        ('R.drawable.ic_stat_name', 'R.drawable.knight_shield_icon'),
+        ('R.drawable.ic_stat_name', 'R.drawable.ic_knight_shield'),
     ])
     patch("app/src/main/java/com/v2ray/ang/handler/NotificationManager.kt", [
         ('.setSmallIcon(R.drawable.ic_stat_name)\n'
-         '            .setContentTitle', '.setSmallIcon(R.drawable.knight_shield_icon)\n'
+         '            .setContentTitle', '.setSmallIcon(R.drawable.ic_knight_shield)\n'
          '            .setContentTitle'),
         ('                R.drawable.ic_delete_24dp,\n'
          '                service.getString(R.string.notification_action_stop_v2ray),',
-         '                R.drawable.knight_shield_icon,\n'
+         '                R.drawable.ic_knight_shield,\n'
          '                service.getString(R.string.notification_action_stop_v2ray),'),
         ('                R.drawable.ic_restore_24dp,\n'
          '                service.getString(R.string.title_service_restart),',
-         '                R.drawable.knight_shield_icon,\n'
+         '                R.drawable.ic_knight_shield,\n'
          '                service.getString(R.string.title_service_restart),'),
         ('            if (proxyTraffic < NOTIFICATION_ICON_THRESHOLD && directTraffic < NOTIFICATION_ICON_THRESHOLD) {\n'
          '                mBuilder?.setSmallIcon(R.drawable.ic_stat_name)\n'
@@ -294,10 +364,10 @@ def prepare(source, cache):
          '            } else {\n'
          '                mBuilder?.setSmallIcon(R.drawable.ic_stat_direct)\n'
          '            }',
-         '            mBuilder?.setSmallIcon(R.drawable.knight_shield_icon)'),
+         '            mBuilder?.setSmallIcon(R.drawable.ic_knight_shield)'),
     ])
     patch("app/src/main/java/com/v2ray/ang/helper/NotificationHelper.kt", [
-        ('.setSmallIcon(R.drawable.ic_stat_name)', '.setSmallIcon(R.drawable.knight_shield_icon)'),
+        ('.setSmallIcon(R.drawable.ic_stat_name)', '.setSmallIcon(R.drawable.ic_knight_shield)'),
     ])
     patch("app/src/main/res/layout/widget_switch.xml", [
         ('android:src="@drawable/ic_play_24dp"', 'android:src="@drawable/knight_shield_icon"'),
@@ -340,14 +410,20 @@ def prepare(source, cache):
     icon_dir = main / "res/drawable-nodpi"
     icon_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(ROOT / "v2rayN/v2rayN.Desktop/Assets/v2rayTaki.png", icon_dir / "taki_app_icon.png")
-    shutil.copyfile(ROOT / "icon/red-and-iron-shield.png", icon_dir / "knight_shield_icon.png")
+    # Bitmap for RemoteViews/launcher surfaces; system-tinted surfaces use the
+    # vector below so they stay crisp and do not decode a 1024px bitmap.
+    shutil.copyfile(overlay / "knight_shield_icon.png", icon_dir / "knight_shield_icon.png")
+    shutil.copyfile(overlay / "ic_knight_shield.xml", main / "res/drawable/ic_knight_shield.xml")
 
     cache.mkdir(parents=True, exist_ok=True)
     libs = app / "libs"
     libs.mkdir(parents=True, exist_ok=True)
+    # Drop emulator-only trees left by an older packaging run.
+    for stale in ("x86", "x86_64"):
+        shutil.rmtree(libs / stale, ignore_errors=True)
     shutil.copyfile(artifact(cache, "libv2ray.aar", AAR), libs / "libv2ray.aar")
     with ZipFile(artifact(cache, "upstream.apk", APK)) as release:
-        for abi in ("arm64-v8a", "armeabi-v7a", "x86_64", "x86"):
+        for abi in ("arm64-v8a", "armeabi-v7a"):
             native = libs / abi
             native.mkdir(parents=True, exist_ok=True)
             native_entries = [
@@ -379,8 +455,8 @@ def main():
         print(f"Android Studio project: {project}")
         return
     gradle = os.environ.get("TAKI_ANDROID_GRADLE", str(project / ("gradlew.bat" if os.name == "nt" else "gradlew")))
-    run(gradle, ":app:assemblePlaystoreDebug", cwd=project)
-    artifacts = list((project / "app/build/outputs/apk/playstore/debug").glob("*universal*.apk"))
+    run(gradle, ":app:assemblePlaystoreRelease", cwd=project)
+    artifacts = list((project / "app/build/outputs/apk/playstore/release").glob("*universal*.apk"))
     if len(artifacts) != 1:
         raise SystemExit("Could not locate one universal APK")
     destination = ROOT / "dist/KnightRay.apk"

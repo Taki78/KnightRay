@@ -2,8 +2,10 @@
 
 The Android port builds on v2rayNG 2.3.15. Its application ID is
 `io.github.v2raytaki.android`, so it upgrades v2rayTaki when signed with the same key
-and installs separately from v2rayNG. The build supports ARM64, 32-bit ARM, x86,
-and x86_64 devices (Android 7.0 or later).
+and installs separately from v2rayNG. The build supports ARM64 and 32-bit ARM
+devices (Android 7.0 or later). The shipped APK carries the ARM64 and 32-bit ARM
+libraries, which covers phones and tablets; the emulator-only x86 libraries are
+stripped from the package.
 
 Open the navigation menu and select **Config Fetcher & Tester**. Choose a
 repository, adjust **Entries per file** if needed (the default is 35), and tap **Fetch & Test**. You can also
@@ -41,8 +43,11 @@ then run:
 python3 scripts/package-v2raytaki-android.py
 ```
 
-The build produces one file, `dist/KnightRay.apk`, a debug-signed universal APK
-for direct installation on supported Android devices. The script
+The build produces one file, `dist/KnightRay.apk`, a release APK for direct
+installation on supported Android devices. It is R8-minified with resource
+shrinking and signed with the debug key so it keeps the upgrade path of earlier
+KnightRay builds. Run `python3 scripts/verify-android-apk.py` after building to
+check the ABI set, size budget, tile icon and signature. The script
 prepares a pinned upstream checkout in `dist/.android-work/upstream` and
 verifies the checksums of the Android Xray library and the upstream APK
 from which it copies the matching HEV libraries and geo assets. This
