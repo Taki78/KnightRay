@@ -263,22 +263,30 @@ def prepare(source, cache):
          '            onClick = { onAction(MainAction.ToggleService) },'),
         ('                painter = if (isRunning) painterResource(R.drawable.ic_stop_24dp)\n'
          '                else painterResource(R.drawable.ic_play_24dp),',
-         '                painter = painterResource(R.drawable.taki_app_icon),'),
+         '                painter = painterResource(R.drawable.knight_shield_icon),'),
         ('                    .graphicsLayer { rotationZ = rotationAnim.value }\n', ''),
     ])
     patch("app/src/main/java/com/v2ray/ang/receiver/WidgetProvider.kt", [
         ('            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.ic_stop_24dp)',
-         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.taki_app_icon)'),
+         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.knight_shield_icon)'),
         ('            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.ic_play_24dp)',
-         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.taki_app_icon)'),
+         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.knight_shield_icon)'),
     ])
     patch("app/src/main/java/com/v2ray/ang/service/QSTileService.kt", [
-        ('R.drawable.ic_stat_name', 'R.drawable.taki_app_icon'),
+        ('R.drawable.ic_stat_name', 'R.drawable.knight_shield_icon'),
     ])
     patch("app/src/main/java/com/v2ray/ang/handler/NotificationManager.kt", [
         ('.setSmallIcon(R.drawable.ic_stat_name)\n'
-         '            .setContentTitle', '.setSmallIcon(R.drawable.taki_app_icon)\n'
+         '            .setContentTitle', '.setSmallIcon(R.drawable.knight_shield_icon)\n'
          '            .setContentTitle'),
+        ('                R.drawable.ic_delete_24dp,\n'
+         '                service.getString(R.string.notification_action_stop_v2ray),',
+         '                R.drawable.knight_shield_icon,\n'
+         '                service.getString(R.string.notification_action_stop_v2ray),'),
+        ('                R.drawable.ic_restore_24dp,\n'
+         '                service.getString(R.string.title_service_restart),',
+         '                R.drawable.knight_shield_icon,\n'
+         '                service.getString(R.string.title_service_restart),'),
         ('            if (proxyTraffic < NOTIFICATION_ICON_THRESHOLD && directTraffic < NOTIFICATION_ICON_THRESHOLD) {\n'
          '                mBuilder?.setSmallIcon(R.drawable.ic_stat_name)\n'
          '            } else if (proxyTraffic > directTraffic) {\n'
@@ -286,16 +294,18 @@ def prepare(source, cache):
          '            } else {\n'
          '                mBuilder?.setSmallIcon(R.drawable.ic_stat_direct)\n'
          '            }',
-         '            mBuilder?.setSmallIcon(R.drawable.taki_app_icon)'),
+         '            mBuilder?.setSmallIcon(R.drawable.knight_shield_icon)'),
     ])
     patch("app/src/main/java/com/v2ray/ang/helper/NotificationHelper.kt", [
-        ('.setSmallIcon(R.drawable.ic_stat_name)', '.setSmallIcon(R.drawable.taki_app_icon)'),
+        ('.setSmallIcon(R.drawable.ic_stat_name)', '.setSmallIcon(R.drawable.knight_shield_icon)'),
     ])
     patch("app/src/main/res/layout/widget_switch.xml", [
-        ('android:src="@drawable/ic_play_24dp"', 'android:src="@drawable/taki_app_icon"'),
+        ('android:src="@drawable/ic_play_24dp"', 'android:src="@drawable/knight_shield_icon"'),
     ])
     patch("app/src/main/res/xml/shortcuts.xml", [
-        ('android:icon="@drawable/ic_qu_switch_24dp"', 'android:icon="@drawable/taki_app_icon"'),
+        ('android:icon="@drawable/ic_qu_switch_24dp"', 'android:icon="@drawable/knight_shield_icon"'),
+        ('android:icon="@drawable/ic_qu_start_24dp"', 'android:icon="@drawable/knight_shield_icon"'),
+        ('android:icon="@drawable/ic_qu_stop_24dp"', 'android:icon="@drawable/knight_shield_icon"'),
     ])
     patch("app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt", [
         ('    private fun parseConfig(\n', '    internal fun parseFetcherProfile(link: String): ProfileItem? = parseConfig(link, "", null)\n\n'
@@ -330,6 +340,7 @@ def prepare(source, cache):
     icon_dir = main / "res/drawable-nodpi"
     icon_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(ROOT / "v2rayN/v2rayN.Desktop/Assets/v2rayTaki.png", icon_dir / "taki_app_icon.png")
+    shutil.copyfile(ROOT / "icon/red-and-iron-shield.png", icon_dir / "knight_shield_icon.png")
 
     cache.mkdir(parents=True, exist_ok=True)
     libs = app / "libs"
