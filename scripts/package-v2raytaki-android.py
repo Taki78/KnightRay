@@ -266,6 +266,37 @@ def prepare(source, cache):
          '                painter = painterResource(R.drawable.taki_app_icon),'),
         ('                    .graphicsLayer { rotationZ = rotationAnim.value }\n', ''),
     ])
+    patch("app/src/main/java/com/v2ray/ang/receiver/WidgetProvider.kt", [
+        ('            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.ic_stop_24dp)',
+         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.taki_app_icon)'),
+        ('            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.ic_play_24dp)',
+         '            remoteViews.setInt(R.id.image_switch, "setImageResource", R.drawable.taki_app_icon)'),
+    ])
+    patch("app/src/main/java/com/v2ray/ang/service/QSTileService.kt", [
+        ('R.drawable.ic_stat_name', 'R.drawable.taki_app_icon'),
+    ])
+    patch("app/src/main/java/com/v2ray/ang/handler/NotificationManager.kt", [
+        ('.setSmallIcon(R.drawable.ic_stat_name)\n'
+         '            .setContentTitle', '.setSmallIcon(R.drawable.taki_app_icon)\n'
+         '            .setContentTitle'),
+        ('            if (proxyTraffic < NOTIFICATION_ICON_THRESHOLD && directTraffic < NOTIFICATION_ICON_THRESHOLD) {\n'
+         '                mBuilder?.setSmallIcon(R.drawable.ic_stat_name)\n'
+         '            } else if (proxyTraffic > directTraffic) {\n'
+         '                mBuilder?.setSmallIcon(R.drawable.ic_stat_proxy)\n'
+         '            } else {\n'
+         '                mBuilder?.setSmallIcon(R.drawable.ic_stat_direct)\n'
+         '            }',
+         '            mBuilder?.setSmallIcon(R.drawable.taki_app_icon)'),
+    ])
+    patch("app/src/main/java/com/v2ray/ang/helper/NotificationHelper.kt", [
+        ('.setSmallIcon(R.drawable.ic_stat_name)', '.setSmallIcon(R.drawable.taki_app_icon)'),
+    ])
+    patch("app/src/main/res/layout/widget_switch.xml", [
+        ('android:src="@drawable/ic_play_24dp"', 'android:src="@drawable/taki_app_icon"'),
+    ])
+    patch("app/src/main/res/xml/shortcuts.xml", [
+        ('android:icon="@drawable/ic_qu_switch_24dp"', 'android:icon="@drawable/taki_app_icon"'),
+    ])
     patch("app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt", [
         ('    private fun parseConfig(\n', '    internal fun parseFetcherProfile(link: String): ProfileItem? = parseConfig(link, "", null)\n\n'
          '    private fun parseConfig(\n'),
