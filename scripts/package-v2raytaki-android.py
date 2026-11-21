@@ -15,8 +15,11 @@ RELEASE = "2.3.15"
 REVISION = "57907cf354d9769200ed4717b4430d605abe0952"
 AAR = ("https://github.com/2dust/AndroidLibXrayLite/releases/download/v26.10.31/libv2ray.aar",
        "2efdf731b1ed624eb1cb0d5a4d0aa95c0672e89f9702226d1ba2dc90308630b6")
-APK = (f"https://github.com/2dust/v2rayNG/releases/download/{RELEASE}/v2rayNG_{RELEASE}_arm64-v8a.apk",
-       "ec53590f042ebb3998169506164ca72eeb84de938d6ed8e888d3b10031f548e3")
+# The universal upstream APK contains the native libraries for every ABI
+# supported by v2rayNG. It is used as a verified source for those assets;
+# the APK itself is rebuilt below with KnightRay's application id and overlay.
+APK = (f"https://github.com/2dust/v2rayNG/releases/download/{RELEASE}/v2rayNG_{RELEASE}-fdroid_universal.apk",
+       "db42c51aa83f2bb31011adc6118fe9826ab3f395e502c928f00f553a993bbd80")
 
 
 def run(*args, cwd=None):
@@ -60,7 +63,7 @@ def prepare(source, cache):
     patch("app/build.gradle.kts", [
         ('applicationId = "com.v2ray.ang"', 'applicationId = "io.github.v2raytaki.android"'),
         ('    versionCode = 755\n', '    versionCode = 760\n'),
-        ('    compileSdk = 37\n', '    compileSdk = 37\n    buildToolsVersion = "37.0.0"\n'),
+        ('    compileSdk = 37\n', '    compileSdk = 37\n    buildToolsVersion = "36.0.0"\n'),
     ])
     # Some translations override the launcher name and notification labels.
     for localized in (main / "res").glob("values*/strings.xml"):
@@ -231,6 +234,38 @@ def prepare(source, cache):
          '                            MainMoreMenuAction.TestAllRealPing -> onAction(MainAction.TestRealAllServers)\n'
          '                            MainMoreMenuAction.TestWeb -> onAction(MainAction.TestAllWeb)\n'),
     ])
+    patch(f"{ui}/MainBottomBar.kt", [
+        ('import androidx.compose.animation.core.Animatable\n', ''),
+        ('import androidx.compose.animation.core.tween\n', ''),
+        ('import androidx.compose.runtime.LaunchedEffect\n', ''),
+        ('import androidx.compose.runtime.remember\n', ''),
+        ('import androidx.compose.runtime.rememberCoroutineScope\n', ''),
+        ('import androidx.compose.ui.graphics.graphicsLayer\n', ''),
+        ('import kotlinx.coroutines.launch\n', ''),
+        ('    val scope = rememberCoroutineScope()\n'
+         '    val rotationAnim = remember { Animatable(0f) }\n\n'
+         '    LaunchedEffect(isRunning) {\n'
+         '        if (!isRunning) {\n'
+         '            rotationAnim.snapTo(0f)\n'
+         '        }\n'
+         '    }\n\n', ''),
+        ('            onClick = {\n'
+         '                if (!isRunning) {\n'
+         '                    scope.launch {\n'
+         '                        rotationAnim.animateTo(\n'
+         '                            targetValue = 720f,\n'
+         '                            animationSpec = tween(durationMillis = 3000)\n'
+         '                        )\n'
+         '                    }\n'
+         '                }\n'
+         '                onAction(MainAction.ToggleService)\n'
+         '            },',
+         '            onClick = { onAction(MainAction.ToggleService) },'),
+        ('                painter = if (isRunning) painterResource(R.drawable.ic_stop_24dp)\n'
+         '                else painterResource(R.drawable.ic_play_24dp),',
+         '                painter = painterResource(R.drawable.taki_app_icon),'),
+        ('                    .graphicsLayer { rotationZ = rotationAnim.value }\n', ''),
+    ])
     patch("app/src/main/java/com/v2ray/ang/handler/AngConfigManager.kt", [
         ('    private fun parseConfig(\n', '    internal fun parseFetcherProfile(link: String): ProfileItem? = parseConfig(link, "", null)\n\n'
          '    private fun parseConfig(\n'),
@@ -267,12 +302,23 @@ def prepare(source, cache):
 
     cache.mkdir(parents=True, exist_ok=True)
     libs = app / "libs"
-    native = libs / "arm64-v8a"
-    native.mkdir(parents=True, exist_ok=True)
+    libs.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(artifact(cache, "libv2ray.aar", AAR), libs / "libv2ray.aar")
     with ZipFile(artifact(cache, "upstream.apk", APK)) as release:
-        for name in ("libhev-socks5-tunnel.so", "libhevsockstun.so"):
-            (native / name).write_bytes(release.read(f"lib/arm64-v8a/{name}"))
+        for abi in ("arm64-v8a", "armeabi-v7a", "x86_64", "x86"):
+            native = libs / abi
+            native.mkdir(parents=True, exist_ok=True)
+            native_entries = [
+                name for name in release.namelist()
+                if name.startswith(f"lib/{abi}/") and name.endswith(".so")
+            ]
+            if not native_entries:
+                raise SystemExit(f"Upstream APK has no native libraries for {abi}")
+            if abi != "arm64-v8a":
+                for entry in native_entries:
+                    (native / Path(entry).name).write_bytes(release.read(entry))
+            for name in ("libhev-socks5-tunnel.so", "libhevsockstun.so"):
+                (native / name).write_bytes(release.read(f"lib/{abi}/{name}"))
         for name in ("geoip.dat", "geosite.dat", "geoip-only-cn-private.dat"):
             (main / "assets" / name).write_bytes(release.read(f"assets/{name}"))
     return project
@@ -291,10 +337,10 @@ def main():
         print(f"Android Studio project: {project}")
         return
     gradle = os.environ.get("TAKI_ANDROID_GRADLE", str(project / ("gradlew.bat" if os.name == "nt" else "gradlew")))
-    run(gradle, ":app:assemblePlaystoreDebug", "-PABI_FILTERS=arm64-v8a", cwd=project)
-    artifacts = list((project / "app/build/outputs/apk/playstore/debug").glob("*arm64-v8a*.apk"))
+    run(gradle, ":app:assemblePlaystoreDebug", cwd=project)
+    artifacts = list((project / "app/build/outputs/apk/playstore/debug").glob("*universal*.apk"))
     if len(artifacts) != 1:
-        raise SystemExit("Could not locate one arm64-v8a APK")
+        raise SystemExit("Could not locate one universal APK")
     destination = ROOT / "dist/KnightRay.apk"
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(artifacts[0], destination)
